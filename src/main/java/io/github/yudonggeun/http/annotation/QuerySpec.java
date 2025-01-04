@@ -8,4 +8,10 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 public @interface QuerySpec {
+
+    String name() default "";
+
+    String description() default "";
+
+    boolean required() default false;
 }
