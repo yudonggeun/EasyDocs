@@ -3,10 +3,12 @@ package io.github.yudonggeun.http.form;
 import io.github.yudonggeun.http.HttpMethod;
 import io.github.yudonggeun.http.JsonType;
 import io.github.yudonggeun.http.annotation.HeaderSpec;
+import io.github.yudonggeun.http.annotation.PathSpec;
 import io.github.yudonggeun.http.annotation.RequestSpec;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,6 +17,7 @@ public class HttpRequestForm {
     private Object request;
     private HttpMethod method;
     private String url;
+    private List<PathForm> pathParams;
     private List<HeaderForm> headers;
 
     public HttpRequestForm(Object request) {
@@ -25,6 +28,7 @@ public class HttpRequestForm {
         this.request = request;
         initStartLine();
         initHeaders();
+        initPaths();
     }
 
     private void initStartLine() {
@@ -80,6 +84,36 @@ public class HttpRequestForm {
                 }
             }
         }
+        headers = Collections.unmodifiableList(headers);
+    }
+
+    private void initPaths() {
+        pathParams = new ArrayList<>();
+        Class<?> clazz = request.getClass();
+        Field[] fields = clazz.getDeclaredFields();
+
+        for (Field field : fields) {
+            if (field.isAnnotationPresent(PathSpec.class)) {
+                PathSpec spec = field.getAnnotation(PathSpec.class);
+                field.setAccessible(true);
+
+                String name = spec.name();
+                String description = spec.description();
+
+                try {
+                    Object value = field.get(request);
+
+                    if (name.isEmpty()) {
+                        name = field.getName();
+                    }
+
+                    pathParams.add(new PathForm(name, description, value));
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException("PathSpec is not available on static fields.", e);
+                }
+            }
+        }
+        pathParams = Collections.unmodifiableList(pathParams);
     }
 
     public String getUrl() {
@@ -102,5 +136,15 @@ public class HttpRequestForm {
 
     public List<HeaderForm> getHeaders() {
         return headers;
+    }
+
+    public Optional<PathForm> getPathParam(String name) {
+        return pathParams.stream()
+                .filter(pathParam -> pathParam.getName().equals(name))
+                .findFirst();
+    }
+
+    public List<PathForm> getPathParams() {
+        return pathParams;
     }
 }
