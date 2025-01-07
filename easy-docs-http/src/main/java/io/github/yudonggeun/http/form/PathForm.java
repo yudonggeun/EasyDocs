@@ -20,7 +20,7 @@ public class PathForm {
         return description;
     }
 
-    public Object getValue() {
-        return value;
+    public String getValue() {
+        return value.toString();
     }
 }
