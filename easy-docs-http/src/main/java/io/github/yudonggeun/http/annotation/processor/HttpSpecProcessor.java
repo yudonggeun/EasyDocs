@@ -2,6 +2,7 @@ package io.github.yudonggeun.http.annotation.processor;
 
 import com.squareup.javapoet.*;
 import io.github.yudonggeun.http.annotation.*;
+import io.github.yudonggeun.http.schema.ObjectType;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
@@ -13,6 +14,7 @@ import javax.lang.model.type.TypeKind;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -22,6 +24,8 @@ import java.util.Set;
 })
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class HttpSpecProcessor extends AbstractProcessor {
+
+    private Set<String> processedClasses = new HashSet<>();
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -35,6 +39,9 @@ public class HttpSpecProcessor extends AbstractProcessor {
     }
 
     private void createFormClass(Element element, Type superType) {
+
+        if (processedClasses.contains(element.getSimpleName().toString())) return;
+
         String pacakageName = getPackageName(element);
         String className = element.getSimpleName().toString();
         List<? extends Element> enclosedElements = element.getEnclosedElements();
@@ -94,6 +101,12 @@ public class HttpSpecProcessor extends AbstractProcessor {
         if (innerClassSpec != null) {
             classBuilder.addType(innerClassSpec);
         }
+
+        for (AnnotationMirror annotationMirror : element.getAnnotationMirrors()) {
+            classBuilder.addAnnotation(AnnotationSpec.get(annotationMirror));
+        }
+
+        processedClasses.add(requestFormClassName);
 
         JavaFile javaFile = JavaFile.builder(pacakageName, classBuilder.build())
                 .build();
@@ -163,9 +176,28 @@ public class HttpSpecProcessor extends AbstractProcessor {
                 MethodSpec methodSpec = createSetter(enclosedElement, className);
                 innerClassBuilder.addField(fieldSpec);
                 innerClassBuilder.addMethod(methodSpec);
-            } else if (enclosedElement.getKind() == ElementKind.CLASS) {
+            } else if (enclosedElement.getKind() == ElementKind.CLASS &&
+                    enclosedElement.getAnnotation(ObjectType.class) != null) {
                 TypeSpec innerClassSpec = createInnerClassSpec(enclosedElement);
                 innerClassBuilder.addType(innerClassSpec);
+
+                ClassName innerClassName = ClassName.bestGuess(getNewClassName(enclosedElement.getSimpleName().toString()));
+                String fieldName = enclosedElement.getSimpleName().toString().toLowerCase();
+                FieldSpec.Builder fieldSpecBuilder = FieldSpec.builder(innerClassName, fieldName, Modifier.PRIVATE);
+                FieldSpec fieldSpec = fieldSpecBuilder.build();
+                innerClassBuilder.addField(fieldSpec);
+
+                MethodSpec.Builder methodSpec = MethodSpec.methodBuilder(fieldName)
+                        .addModifiers(Modifier.PUBLIC)
+                        .addParameter(innerClassName, fieldName)
+                        .returns(ClassName.bestGuess(className))
+                        .addStatement(String.format("this.%s = %s", fieldName, fieldName))
+                        .addStatement("return this");
+
+                if (enclosedElement.asType().getKind() == TypeKind.ARRAY) {
+                    methodSpec.varargs(true);
+                }
+                innerClassBuilder.addMethod(methodSpec.build());
             }
         }
         return innerClassBuilder.build();
