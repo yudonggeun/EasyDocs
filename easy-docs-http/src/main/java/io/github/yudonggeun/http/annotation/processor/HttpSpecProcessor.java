@@ -2,7 +2,8 @@ package io.github.yudonggeun.http.annotation.processor;
 
 import com.squareup.javapoet.*;
 import io.github.yudonggeun.http.annotation.*;
-import io.github.yudonggeun.http.schema.ObjectType;
+import io.github.yudonggeun.http.schema.ArraySchema;
+import io.github.yudonggeun.http.schema.Schema;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
@@ -13,7 +14,6 @@ import javax.lang.model.element.*;
 import javax.lang.model.type.TypeKind;
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -44,38 +44,47 @@ public class HttpSpecProcessor extends AbstractProcessor {
 
         String pacakageName = getPackageName(element);
         String className = element.getSimpleName().toString();
+        String requestFormClassName = getNewClassName(className);
         List<? extends Element> enclosedElements = element.getEnclosedElements();
 
-        TypeSpec innerClassSpec = null;
-        List<FieldSpec> fieldSpecs = new ArrayList<>();
-        List<MethodSpec> methodSpecs = new ArrayList<>();
+        TypeSpec.Builder classBuilder = TypeSpec.classBuilder(requestFormClassName)
+                .addSuperinterface(superType)
+                .addModifiers(Modifier.PUBLIC);
 
         // static factory method
-        String requestFormClassName = getNewClassName(className);
         MethodSpec factoryMethod = createFactoryMethod(requestFormClassName);
-        methodSpecs.add(factoryMethod);
+        classBuilder.addMethod(factoryMethod);
 
         for (Element enclosedElement : enclosedElements) {
 
             // field and method chain
             if (enclosedElement.getKind() == ElementKind.FIELD) {
                 FieldSpec fieldSpec = createField(enclosedElement);
-                fieldSpecs.add(fieldSpec);
+                classBuilder.addField(fieldSpec);
 
                 MethodSpec methodSpec = createSetter(enclosedElement, requestFormClassName);
-                methodSpecs.add(methodSpec);
+                classBuilder.addMethod(methodSpec);
             }
 
             // body
-            if (enclosedElement.getAnnotation(BodySpec.class) != null) {
+            if (enclosedElement.getAnnotation(Schema.class) != null || enclosedElement.getAnnotation(ArraySchema.class) != null) {
                 // object
                 if (enclosedElement.getKind() == ElementKind.CLASS) {
-                    innerClassSpec = createInnerClassSpec(enclosedElement);
+                    classBuilder.addType(createInnerClassSpec(enclosedElement));
 
-                    ClassName innerClassName = ClassName.bestGuess(getNewClassName(enclosedElement.getSimpleName().toString()));
+                    boolean isArray = enclosedElement.getAnnotation(ArraySchema.class) != null;
+                    TypeName innerClassName = isArray ? ArrayTypeName.of(ClassName.bestGuess(getNewClassName(enclosedElement.getSimpleName().toString())))
+                            : ClassName.bestGuess(getNewClassName(enclosedElement.getSimpleName().toString()));
+
                     FieldSpec.Builder fieldSpecBuilder = FieldSpec.builder(innerClassName, "body", Modifier.PRIVATE);
-                    FieldSpec fieldSpec = fieldSpecBuilder.build();
-                    fieldSpecs.add(fieldSpec);
+
+                    if (enclosedElement.getAnnotation(BodySpec.class) != null) {
+                        fieldSpecBuilder.addAnnotation(AnnotationSpec.get(enclosedElement.getAnnotation(BodySpec.class)));
+                    } else {
+                        AnnotationSpec bodySpecAnnotation = AnnotationSpec.builder(BodySpec.class).build();
+                        fieldSpecBuilder.addAnnotation(bodySpecAnnotation);
+                    }
+                    classBuilder.addField(fieldSpecBuilder.build());
 
                     MethodSpec.Builder methodSpec = MethodSpec.methodBuilder("body")
                             .addModifiers(Modifier.PUBLIC)
@@ -84,22 +93,12 @@ public class HttpSpecProcessor extends AbstractProcessor {
                             .addStatement("this.body = body")
                             .addStatement("return this");
 
-                    if (enclosedElement.asType().getKind() == TypeKind.ARRAY) {
+                    if (isArray || enclosedElement.asType().getKind() == TypeKind.ARRAY) {
                         methodSpec.varargs(true);
                     }
-                    methodSpecs.add(methodSpec.build());
+                    classBuilder.addMethod(methodSpec.build());
                 }
             }
-        }
-
-        TypeSpec.Builder classBuilder = TypeSpec.classBuilder(requestFormClassName)
-                .addSuperinterface(superType)
-                .addModifiers(Modifier.PUBLIC)
-                .addFields(fieldSpecs)
-                .addMethods(methodSpecs);
-
-        if (innerClassSpec != null) {
-            classBuilder.addType(innerClassSpec);
         }
 
         for (AnnotationMirror annotationMirror : element.getAnnotationMirrors()) {
@@ -176,12 +175,17 @@ public class HttpSpecProcessor extends AbstractProcessor {
                 MethodSpec methodSpec = createSetter(enclosedElement, className);
                 innerClassBuilder.addField(fieldSpec);
                 innerClassBuilder.addMethod(methodSpec);
-            } else if (enclosedElement.getKind() == ElementKind.CLASS &&
-                    enclosedElement.getAnnotation(ObjectType.class) != null) {
+            } else if (
+                    enclosedElement.getKind() == ElementKind.CLASS &&
+                            (enclosedElement.getAnnotation(Schema.class) != null || enclosedElement.getAnnotation(ArraySchema.class) != null)
+            ) {
                 TypeSpec innerClassSpec = createInnerClassSpec(enclosedElement);
                 innerClassBuilder.addType(innerClassSpec);
 
-                ClassName innerClassName = ClassName.bestGuess(getNewClassName(enclosedElement.getSimpleName().toString()));
+                boolean isArray = enclosedElement.getAnnotation(ArraySchema.class) != null;
+                TypeName innerClassName = isArray ? ArrayTypeName.of(ClassName.bestGuess(getNewClassName(enclosedElement.getSimpleName().toString())))
+                        : ClassName.bestGuess(getNewClassName(enclosedElement.getSimpleName().toString()));
+
                 String fieldName = enclosedElement.getSimpleName().toString().toLowerCase();
                 FieldSpec.Builder fieldSpecBuilder = FieldSpec.builder(innerClassName, fieldName, Modifier.PRIVATE);
                 FieldSpec fieldSpec = fieldSpecBuilder.build();
@@ -194,7 +198,7 @@ public class HttpSpecProcessor extends AbstractProcessor {
                         .addStatement(String.format("this.%s = %s", fieldName, fieldName))
                         .addStatement("return this");
 
-                if (enclosedElement.asType().getKind() == TypeKind.ARRAY) {
+                if (isArray || enclosedElement.asType().getKind() == TypeKind.ARRAY) {
                     methodSpec.varargs(true);
                 }
                 innerClassBuilder.addMethod(methodSpec.build());
