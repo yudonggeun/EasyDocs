@@ -34,7 +34,7 @@ public class HeaderForm {
         return type;
     }
 
-    public Object getValue() {
-        return value;
+    public String getValue() {
+        return value.toString();
     }
 }

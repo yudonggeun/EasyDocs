@@ -1,11 +1,12 @@
 package io.github.yudonggeun.http.form;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.yudonggeun.http.HttpMethod;
 import io.github.yudonggeun.http.JsonType;
-import io.github.yudonggeun.http.annotation.HeaderSpec;
-import io.github.yudonggeun.http.annotation.PathSpec;
-import io.github.yudonggeun.http.annotation.QuerySpec;
-import io.github.yudonggeun.http.annotation.RequestSpec;
+import io.github.yudonggeun.http.annotation.*;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -15,14 +16,15 @@ import java.util.Optional;
 
 public class HttpRequestForm {
 
-    private Object request;
+    private HttpRequestInput request;
     private HttpMethod method;
     private String url;
     private List<PathForm> pathParams;
     private List<QueryForm> queryParams;
     private List<HeaderForm> headers;
+    private Object bodyValue;
 
-    public HttpRequestForm(Object request) {
+    public HttpRequestForm(HttpRequestInput request) {
         Class<?> clazz = request.getClass();
         if (!clazz.isAnnotationPresent(RequestSpec.class))
             throw new IllegalArgumentException("the input must be an instance of a class with the RequestSpec annotation.");
@@ -32,6 +34,22 @@ public class HttpRequestForm {
         initHeaders();
         initPathParams();
         initQueryParams();
+        initBody();
+    }
+
+    private void initBody() {
+        Class<?> clazz = request.getClass();
+        try {
+            Field bodyField = clazz.getDeclaredField("body");
+            bodyField.setAccessible(true);
+            Object body = bodyField.get(request);
+            Class<?> schemaClass = body.getClass();
+            this.bodyValue = body;
+        } catch (NoSuchFieldException e) {
+            throw new RuntimeException(e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void initStartLine() {
@@ -205,5 +223,15 @@ public class HttpRequestForm {
 
     public List<QueryForm> getQueryParams() {
         return queryParams;
+    }
+
+    public byte[] getBody() {
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
+            return objectMapper.writeValueAsBytes(bodyValue);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
