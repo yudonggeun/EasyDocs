@@ -1,12 +1,12 @@
 package io.github.yudonggeun;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.yudonggeun.http.HttpMethod;
 import io.github.yudonggeun.http.annotation.HttpRequestInput;
 import io.github.yudonggeun.http.annotation.HttpResponseInput;
-import io.github.yudonggeun.http.form.HeaderForm;
-import io.github.yudonggeun.http.form.HttpRequestForm;
-import io.github.yudonggeun.http.form.PathForm;
-import io.github.yudonggeun.http.form.QueryForm;
+import io.github.yudonggeun.http.form.*;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -16,6 +16,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -27,12 +28,12 @@ public class HttpTask implements Task {
     public HttpTask(HttpRequestInput request, HttpResponseInput response) {
         this.requestInput = request;
         this.responseInput = response;
-
     }
 
     @Override
     public void execute() {
         HttpRequestForm requestForm = new HttpRequestForm(requestInput);
+        HttpResponseForm responseForm = new HttpResponseForm(responseInput);
 
         HttpMethod method = requestForm.getMethod();
         String urlTemplate = "http://localhost" + requestForm.getUrl();
@@ -58,11 +59,16 @@ public class HttpTask implements Task {
                 }
             }
 
-            // response
+            // validator
             int responseCode = connection.getResponseCode();
             Map<String, List<String>> responseHeaders = connection.getHeaderFields();
 
-            BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            BufferedReader in;
+            if (responseCode >= 400) {
+                in = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
+            } else {
+                in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            }
             String inputLine;
             StringBuilder response = new StringBuilder();
 
@@ -71,8 +77,44 @@ public class HttpTask implements Task {
             }
             in.close();
 
-            System.out.println("POST Response Code : " + responseCode);
-            System.out.println("response = \n" + response.toString());
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
+
+            boolean isMatch = true;
+            StringBuilder report = new StringBuilder();
+
+            // status matcher
+            if (responseCode == responseForm.getStatusCode()) {
+            } else {
+                isMatch = false;
+                report.append("##error reporting##\n")
+                        .append("   response status code\n").append(responseCode).append("\n")
+                        .append("   expected status code\n").append(responseForm.getStatusCode()).append("\n");
+            }
+            // header matcher
+            for (HeaderForm header : responseForm.getHeaders()) {
+                List<String> headerValues = responseHeaders.getOrDefault(header.getName(), Collections.emptyList());
+                if (!headerValues.contains(header.getValue())) {
+                    report.append("##error reporting##\n")
+                            .append("   response header name\n").append(header.getName()).append("\n")
+                            .append("   response header value\n").append(headerValues).append("\n")
+                            .append("   expected response header value\n").append(header.getValue()).append("\n");
+                    isMatch = false;
+                }
+            }
+
+            // body matcher
+            if (!objectMapper.writeValueAsString(responseForm.getBody()).contentEquals(response)) {
+                isMatch = false;
+                report.append("##error reporting##\n")
+                        .append("   expected response body\n").append(objectMapper.writeValueAsString(responseForm.getBody())).append("\n")
+                        .append("   received response body\n").append(response).append("\n");
+            }
+
+            if (isMatch) {
+            } else {
+                System.err.println(report);
+            }
         } catch (ProtocolException e) {
             throw new RuntimeException(e);
         } catch (MalformedURLException e) {
