@@ -7,6 +7,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.yudonggeun.http.HttpMethod;
 import io.github.yudonggeun.http.JsonType;
 import io.github.yudonggeun.http.annotation.*;
+import io.github.yudonggeun.http.schema.ArraySchema;
+import io.github.yudonggeun.http.schema.Schema;
+import io.github.yudonggeun.http.schema.SchemaUtil;
+import org.json.JSONObject;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -23,6 +27,7 @@ public class HttpRequestForm {
     private List<QueryForm> queryParams;
     private List<HeaderForm> headers;
     private Object bodyValue;
+    private JSONObject bodySchema;
 
     public HttpRequestForm(HttpRequestInput request) {
         Class<?> clazz = request.getClass();
@@ -44,6 +49,13 @@ public class HttpRequestForm {
             bodyField.setAccessible(true);
             Object body = bodyField.get(request);
             Class<?> schemaClass = body.getClass();
+            if (schemaClass.isAnnotationPresent(Schema.class)) {
+                Schema schema = schemaClass.getAnnotation(Schema.class);
+                bodySchema = SchemaUtil.getSchema(schema.description(), schemaClass);
+            } else if (schemaClass.isAnnotationPresent(ArraySchema.class)) {
+                ArraySchema schema = schemaClass.getAnnotation(ArraySchema.class);
+                bodySchema = SchemaUtil.getArraySchema(schema.description(), schemaClass);
+            }
             this.bodyValue = body;
         } catch (NoSuchFieldException e) {
             throw new RuntimeException(e);
