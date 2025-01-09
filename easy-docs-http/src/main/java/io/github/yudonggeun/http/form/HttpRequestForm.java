@@ -10,6 +10,7 @@ import io.github.yudonggeun.http.annotation.*;
 import io.github.yudonggeun.http.schema.ArraySchema;
 import io.github.yudonggeun.http.schema.Schema;
 import io.github.yudonggeun.http.schema.SchemaUtil;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.lang.reflect.Field;
@@ -21,8 +22,14 @@ import java.util.Optional;
 public class HttpRequestForm {
 
     private HttpRequestInput request;
+
     private HttpMethod method;
     private String url;
+    private String operationId;
+    private String summary;
+    private String description;
+    private String[] tags;
+
     private List<PathForm> pathParams;
     private List<QueryForm> queryParams;
     private List<HeaderForm> headers;
@@ -35,7 +42,7 @@ public class HttpRequestForm {
             throw new IllegalArgumentException("the input must be an instance of a class with the RequestSpec annotation.");
 
         this.request = request;
-        initStartLine();
+        initRequestSpec();
         initHeaders();
         initPathParams();
         initQueryParams();
@@ -64,11 +71,15 @@ public class HttpRequestForm {
         }
     }
 
-    private void initStartLine() {
+    private void initRequestSpec() {
         Class<?> clazz = request.getClass();
         RequestSpec requestSpec = clazz.getAnnotation(RequestSpec.class);
         this.method = requestSpec.method();
         this.url = requestSpec.url();
+        this.operationId = requestSpec.operationId();
+        this.summary = requestSpec.summary();
+        this.description = requestSpec.description();
+        this.tags = requestSpec.tags();
     }
 
     private void initHeaders() {
@@ -245,5 +256,62 @@ public class HttpRequestForm {
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public JSONObject getBodySchema() {
+        return bodySchema;
+    }
+
+    public String getOperationId() {
+        return operationId;
+    }
+
+    public String getSummary() {
+        return summary;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String[] getTags() {
+        return tags;
+    }
+
+    public Object getParameterSchema() {
+        JSONArray parameters = new JSONArray();
+        // path
+        for (PathForm pathParam : pathParams) {
+            JSONObject parameter = new JSONObject();
+            String description = pathParam.getDescription();
+            String name = pathParam.getName();
+            String in = "path";
+            boolean required = true;
+            JSONObject schema = new JSONObject();
+            schema.put("type", "string");
+            parameter.put("description", description);
+            parameter.put("required", required);
+            parameter.put("name", name);
+            parameter.put("in", in);
+            parameter.put("schema", schema);
+            parameters.put(parameter);
+        }
+        // query
+        for (QueryForm queryParam : queryParams) {
+            JSONObject parameter = new JSONObject();
+            String description = queryParam.getDescription();
+            String name = queryParam.getName();
+            String in = "query";
+            boolean required = queryParam.isRequired();
+            JSONObject schema = new JSONObject();
+            schema.put("type", queryParam.getJsonType().name().toLowerCase());
+            parameter.put("description", description);
+            parameter.put("required", required);
+            parameter.put("name", name);
+            parameter.put("in", in);
+            parameter.put("schema", schema);
+            parameters.put(parameter);
+        }
+        return parameters;
     }
 }

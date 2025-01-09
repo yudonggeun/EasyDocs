@@ -8,6 +8,16 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface RequestSpec {
+
     HttpMethod method();
+
     String url();
+
+    String operationId();
+
+    String summary();
+
+    String description();
+
+    String[] tags() default {};
 }

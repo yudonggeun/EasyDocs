@@ -3,6 +3,7 @@ package io.github.yudonggeun.http.form;
 import io.github.yudonggeun.http.JsonType;
 import io.github.yudonggeun.http.annotation.HeaderSpec;
 import io.github.yudonggeun.http.annotation.HttpResponseInput;
+import io.github.yudonggeun.http.annotation.ResponseSpec;
 import io.github.yudonggeun.http.schema.ArraySchema;
 import io.github.yudonggeun.http.schema.Schema;
 import io.github.yudonggeun.http.schema.SchemaUtil;
@@ -15,16 +16,26 @@ import java.util.List;
 import java.util.Optional;
 
 public class HttpResponseForm {
+
+    private String description;
+
     private Object input;
-    private int statusCode;
+    private int statusCode = 200;
     private List<HeaderForm> headers;
     private Object bodyValue;
     private JSONObject bodySchema;
 
     public HttpResponseForm(HttpResponseInput input){
         this.input = input;
+        initResponseSpec();
         initHeaders();
         initBody();
+    }
+
+    private void initResponseSpec(){
+        Class<?> clazz = input.getClass();
+        ResponseSpec spec = clazz.getAnnotation(ResponseSpec.class);
+        description = spec.description();
     }
 
     private void initHeaders() {
@@ -114,5 +125,13 @@ public class HttpResponseForm {
 
     public List<HeaderForm> getHeaders() {
         return headers;
+    }
+
+    public JSONObject getBodySchema(){
+        return bodySchema;
+    }
+
+    public String getDescription() {
+        return description;
     }
 }
