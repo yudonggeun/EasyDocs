@@ -112,6 +112,7 @@ public class HttpTask implements Task {
             }
 
             if (isMatch) {
+                Document.addApi(requestForm, responseForm);
             } else {
                 System.err.println(report);
             }
