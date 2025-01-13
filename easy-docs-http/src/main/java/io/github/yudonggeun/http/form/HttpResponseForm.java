@@ -35,6 +35,7 @@ public class HttpResponseForm {
     private void initResponseSpec(){
         Class<?> clazz = input.getClass();
         ResponseSpec spec = clazz.getAnnotation(ResponseSpec.class);
+        statusCode = spec.statusCode();
         description = spec.description();
     }
 
