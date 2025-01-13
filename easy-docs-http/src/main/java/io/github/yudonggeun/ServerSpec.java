@@ -28,10 +28,12 @@ public class ServerSpec implements JsonSpec {
         server.put("description", description);
 
         JSONObject variables = new JSONObject();
-        server.put("variables", variables);
-        for (ServerVariableSpec variable : this.variables) {
-            Object json = variable.toJson();
-            variables.put(variable.getName(), json);
+        if(!variables.isEmpty()) {
+            server.put("variables", variables);
+            for (ServerVariableSpec variable : this.variables) {
+                Object json = variable.toJson();
+                variables.put(variable.getName(), json);
+            }
         }
         return server;
     }
