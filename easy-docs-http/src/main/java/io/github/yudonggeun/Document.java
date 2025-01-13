@@ -1,8 +1,10 @@
 package io.github.yudonggeun;
 
-import io.github.yudonggeun.http.form.HeaderForm;
-import io.github.yudonggeun.http.form.HttpRequestForm;
-import io.github.yudonggeun.http.form.HttpResponseForm;
+import io.github.yudonggeun.form.HeaderForm;
+import io.github.yudonggeun.form.HttpRequestForm;
+import io.github.yudonggeun.form.HttpResponseForm;
+import io.github.yudonggeun.spec.InfoSpec;
+import io.github.yudonggeun.spec.ServerSpec;
 import org.json.JSONArray;
 import org.json.JSONObject;
 

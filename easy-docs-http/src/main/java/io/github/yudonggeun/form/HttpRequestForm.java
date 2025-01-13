@@ -1,15 +1,18 @@
-package io.github.yudonggeun.http.form;
+package io.github.yudonggeun.form;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.yudonggeun.http.HttpMethod;
-import io.github.yudonggeun.http.JsonType;
-import io.github.yudonggeun.http.annotation.*;
-import io.github.yudonggeun.http.schema.ArraySchema;
-import io.github.yudonggeun.http.schema.Schema;
-import io.github.yudonggeun.http.schema.SchemaUtil;
+import io.github.yudonggeun.enums.HttpMethod;
+import io.github.yudonggeun.enums.JsonType;
+import io.github.yudonggeun.schema.ArraySchema;
+import io.github.yudonggeun.schema.Schema;
+import io.github.yudonggeun.schema.SchemaUtil;
+import io.github.yudonggeun.spec.HeaderSpec;
+import io.github.yudonggeun.spec.PathSpec;
+import io.github.yudonggeun.spec.QuerySpec;
+import io.github.yudonggeun.spec.RequestSpec;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -21,7 +24,7 @@ import java.util.Optional;
 
 public class HttpRequestForm {
 
-    private HttpRequestInput request;
+    private HttpRequestFormData request;
 
     private HttpMethod method;
     private String url;
@@ -36,7 +39,7 @@ public class HttpRequestForm {
     private Object bodyValue;
     private JSONObject bodySchema;
 
-    public HttpRequestForm(HttpRequestInput request) {
+    public HttpRequestForm(HttpRequestFormData request) {
         Class<?> clazz = request.getClass();
         if (!clazz.isAnnotationPresent(RequestSpec.class))
             throw new IllegalArgumentException("the input must be an instance of a class with the RequestSpec annotation.");

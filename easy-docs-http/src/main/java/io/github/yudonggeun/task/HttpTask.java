@@ -1,12 +1,11 @@
-package io.github.yudonggeun;
+package io.github.yudonggeun.task;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.yudonggeun.http.HttpMethod;
-import io.github.yudonggeun.http.annotation.HttpRequestInput;
-import io.github.yudonggeun.http.annotation.HttpResponseInput;
-import io.github.yudonggeun.http.form.*;
+import io.github.yudonggeun.Document;
+import io.github.yudonggeun.enums.HttpMethod;
+import io.github.yudonggeun.form.*;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -22,10 +21,10 @@ import java.util.Map;
 
 public class HttpTask implements Task {
 
-    private final HttpRequestInput requestInput;
-    private final HttpResponseInput responseInput;
+    private final HttpRequestFormData requestInput;
+    private final HttpResponseFormData responseInput;
 
-    public HttpTask(HttpRequestInput request, HttpResponseInput response) {
+    public HttpTask(HttpRequestFormData request, HttpResponseFormData response) {
         this.requestInput = request;
         this.responseInput = response;
     }

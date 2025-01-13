@@ -1,12 +1,11 @@
-package io.github.yudonggeun.http.form;
+package io.github.yudonggeun.form;
 
-import io.github.yudonggeun.http.JsonType;
-import io.github.yudonggeun.http.annotation.HeaderSpec;
-import io.github.yudonggeun.http.annotation.HttpResponseInput;
-import io.github.yudonggeun.http.annotation.ResponseSpec;
-import io.github.yudonggeun.http.schema.ArraySchema;
-import io.github.yudonggeun.http.schema.Schema;
-import io.github.yudonggeun.http.schema.SchemaUtil;
+import io.github.yudonggeun.enums.JsonType;
+import io.github.yudonggeun.spec.HeaderSpec;
+import io.github.yudonggeun.spec.ResponseSpec;
+import io.github.yudonggeun.schema.ArraySchema;
+import io.github.yudonggeun.schema.Schema;
+import io.github.yudonggeun.schema.SchemaUtil;
 import org.json.JSONObject;
 
 import java.lang.reflect.Field;
@@ -25,7 +24,7 @@ public class HttpResponseForm {
     private Object bodyValue;
     private JSONObject bodySchema;
 
-    public HttpResponseForm(HttpResponseInput input){
+    public HttpResponseForm(HttpResponseFormData input){
         this.input = input;
         initResponseSpec();
         initHeaders();

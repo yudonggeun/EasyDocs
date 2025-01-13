@@ -1,4 +1,4 @@
-package io.github.yudonggeun.http.schema;
+package io.github.yudonggeun.schema;
 
 import org.json.JSONArray;
 import org.json.JSONObject;

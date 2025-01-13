@@ -1,4 +1,4 @@
-package io.github.yudonggeun.http.annotation;
+package io.github.yudonggeun.spec;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -7,11 +7,9 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface QuerySpec {
+public @interface PathSpec {
 
     String name() default "";
 
     String description() default "";
-
-    boolean required() default false;
 }

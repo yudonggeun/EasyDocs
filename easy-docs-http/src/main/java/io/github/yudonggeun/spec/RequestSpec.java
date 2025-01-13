@@ -1,6 +1,6 @@
-package io.github.yudonggeun.http.annotation;
+package io.github.yudonggeun.spec;
 
-import io.github.yudonggeun.http.HttpMethod;
+import io.github.yudonggeun.enums.HttpMethod;
 
 import java.lang.annotation.*;
 

@@ -1,4 +1,4 @@
-package io.github.yudonggeun.http.schema;
+package io.github.yudonggeun.schema;
 
 import java.lang.annotation.*;
 

@@ -1,6 +1,6 @@
-package io.github.yudonggeun.http.form;
+package io.github.yudonggeun.form;
 
-import io.github.yudonggeun.http.JsonType;
+import io.github.yudonggeun.enums.JsonType;
 
 public class HeaderForm {
 

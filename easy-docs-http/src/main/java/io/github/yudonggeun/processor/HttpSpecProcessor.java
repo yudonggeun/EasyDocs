@@ -1,9 +1,13 @@
-package io.github.yudonggeun.http.annotation.processor;
+package io.github.yudonggeun.processor;
 
 import com.squareup.javapoet.*;
-import io.github.yudonggeun.http.annotation.*;
-import io.github.yudonggeun.http.schema.ArraySchema;
-import io.github.yudonggeun.http.schema.Schema;
+import io.github.yudonggeun.form.HttpRequestFormData;
+import io.github.yudonggeun.form.HttpResponseFormData;
+import io.github.yudonggeun.schema.ArraySchema;
+import io.github.yudonggeun.schema.Schema;
+import io.github.yudonggeun.spec.BodySpec;
+import io.github.yudonggeun.spec.RequestSpec;
+import io.github.yudonggeun.spec.ResponseSpec;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
@@ -19,8 +23,8 @@ import java.util.List;
 import java.util.Set;
 
 @SupportedAnnotationTypes({
-        "io.github.yudonggeun.http.annotation.RequestSpec",
-        "io.github.yudonggeun.http.annotation.ResponseSpec",
+        "io.github.yudonggeun.spec.RequestSpec",
+        "io.github.yudonggeun.spec.ResponseSpec",
 })
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class HttpSpecProcessor extends AbstractProcessor {
@@ -30,10 +34,10 @@ public class HttpSpecProcessor extends AbstractProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         for (Element element : roundEnv.getElementsAnnotatedWith(RequestSpec.class)) {
-            createFormClass(element, HttpRequestInput.class);
+            createFormClass(element, HttpRequestFormData.class);
         }
         for (Element element : roundEnv.getElementsAnnotatedWith(ResponseSpec.class)) {
-            createFormClass(element, HttpResponseInput.class);
+            createFormClass(element, HttpResponseFormData.class);
         }
         return true;
     }

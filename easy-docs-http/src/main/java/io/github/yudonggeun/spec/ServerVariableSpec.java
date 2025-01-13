@@ -1,4 +1,4 @@
-package io.github.yudonggeun;
+package io.github.yudonggeun.spec;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;

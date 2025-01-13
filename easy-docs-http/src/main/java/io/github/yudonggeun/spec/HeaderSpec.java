@@ -1,6 +1,6 @@
-package io.github.yudonggeun.http.annotation;
+package io.github.yudonggeun.spec;
 
-import io.github.yudonggeun.http.JsonType;
+import io.github.yudonggeun.enums.JsonType;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

@@ -1,4 +1,4 @@
-package io.github.yudonggeun;
+package io.github.yudonggeun.task;
 
 public interface Task {
 

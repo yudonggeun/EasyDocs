@@ -1,4 +1,4 @@
-package io.github.yudonggeun.http.schema;
+package io.github.yudonggeun.spec;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -6,10 +6,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.FIELD, ElementType.TYPE})
-public @interface ArraySchema {
+@Target(ElementType.FIELD)
+public @interface QuerySpec {
+
+    String name() default "";
 
     String description() default "";
 
-    boolean required() default true;
+    boolean required() default false;
 }

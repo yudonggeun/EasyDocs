@@ -1,4 +1,4 @@
-package io.github.yudonggeun.http.form;
+package io.github.yudonggeun.form;
 
 public class PathForm {
 
