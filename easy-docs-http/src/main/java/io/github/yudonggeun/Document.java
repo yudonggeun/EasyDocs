@@ -14,6 +14,7 @@ public class Document {
 
     private static Document docs = new Document();
 
+    private InfoSpec info;
     private List<ServerSpec> servers = new ArrayList<>();
     private JSONObject paths = new JSONObject();
 
@@ -74,9 +75,14 @@ public class Document {
     }
 
     public static String getOpenApi3(int indent) {
+
+        initInfo();
+        initDefaultServer();
+
         JSONObject root = new JSONObject();
         JSONArray serverArray = new JSONArray();
 
+        root.put("info", docs.info.toJson());
         for (ServerSpec server : docs.servers) {
             serverArray.put(server.toJson());
         }
@@ -85,5 +91,16 @@ public class Document {
         root.put("paths", docs.paths);
 
         return root.toString(indent);
+    }
+
+    public static void initDefaultServer() {
+        if (!docs.servers.isEmpty()) return;
+        ServerSpec serverSpec = new ServerSpec("http://localhost:8080", "default web server");
+        Document.addServer(serverSpec);
+    }
+
+    public static void initInfo() {
+        InfoSpec spec = new InfoSpec("The title of the API", "1.0.1");
+        docs.info = spec;
     }
 }
